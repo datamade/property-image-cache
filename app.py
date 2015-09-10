@@ -9,13 +9,13 @@ from io import StringIO, BytesIO
 
 app = Flask(__name__)
 
-@app.route('/<pin>.jpeg')
+@app.route('/<pin>.jpg')
 def index(pin):
 
     s3_conn = S3Connection(AWS_KEY, AWS_SECRET)
     bucket = s3_conn.get_bucket('property-image-cache')
     s3_key = Key(bucket)
-    s3_key.key = '{0}.jpeg'.format(pin)
+    s3_key.key = '{0}.jpg'.format(pin)
 
     try:
         output = BytesIO()
@@ -28,13 +28,13 @@ def index(pin):
         image = requests.get(image_url)
         
         output = BytesIO(image.content)
-        s3_key.set_metadata('Content-Type', 'image/jpeg')
+        s3_key.set_metadata('Content-Type', 'image/jpg')
         s3_key.set_contents_from_file(output)
         s3_key.set_acl('public-read')
         
     output.seek(0)
     response = make_response(output.read())
-    response.headers['Content-Type'] = 'image/jpeg'
+    response.headers['Content-Type'] = 'image/jpg'
     return response
 
 
