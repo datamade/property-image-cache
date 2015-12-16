@@ -77,10 +77,14 @@ def document(city):
         doc = requests.get(url)
         
         if doc.status_code == 200:
-            filename = doc.headers['content-disposition'].rsplit(';', 1)[1]
-            content_type = doc.headers['content-type']
-
             output = BytesIO(doc.content)
+            
+            if doc.headers.get('content-disposition'):
+                filename = doc.headers['content-disposition'].rsplit('=', 1)[1].replace('"', '')
+                content_type = doc.headers['content-type']
+            else:
+                abort(404)
+
             s3_key.set_metadata('content-type', content_type)
             s3_key.set_metadata('filename', filename)
             s3_key.set_contents_from_file(output)
@@ -93,7 +97,7 @@ def document(city):
     response.headers['Content-Type'] = content_type
     
     if 'pdf' not in content_type:
-        response.headers['Content-Disposition'] = 'attachment;{}'.format(filename)
+        response.headers['Content-Disposition'] = 'attachment;filename="{}"'.format(filename)
 
     return response
 
