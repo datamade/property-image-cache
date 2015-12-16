@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 LEGISTARS = {
     'chicago': 'https://chicago.legistar.com/View.ashx',
-    'nyc': 'http://legistar.council.nyc.gov',
+    'nyc': 'http://legistar.council.nyc.gov/View.ashx',
 }
 
 @app.route('/<pin>.jpg')
