@@ -6,6 +6,7 @@ from boto.s3.key import Key
 from boto.exception import S3ResponseError
 from app_config import AWS_KEY, AWS_SECRET
 from io import StringIO, BytesIO
+from flask_cors import cross_origin
 
 app = Flask(__name__)
 
@@ -45,6 +46,7 @@ def index(pin):
     return response
 
 @app.route('/<city>/document/')
+@cross_origin()
 def document(city):
     doc_id, guid = request.args.get('ID'), request.args.get('GUID')
 
