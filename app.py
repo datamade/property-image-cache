@@ -28,7 +28,7 @@ def index(pin):
         s3_key.get_contents_to_file(output)
 
     else:
-        image_viewer = 'http://cookviewer1.cookcountyil.gov/Jsviewer/image_viewer/requestImg.aspx?{0}='
+        image_viewer = 'http://www.cookcountyassessor.com/PropertyImage.aspx?pin={0}'
         image_url = image_viewer.format(pin)
         image = requests.get(image_url)
         
