@@ -53,20 +53,22 @@ def index(pin):
 @cross_origin()
 def document(city):
     try:
-        document_url = request.url.rsplit('?', 1)[1].replace('document_url=', '')
+        query_params = request.url.rsplit('?', 1)[1]
     except IndexError:
         abort(400)
+    
+    filename, document_url = query_params.split('&', 1)
 
     if not document_url:
         abort(404)
     
-    document_url = unquote(document_url)
+    document_url = unquote(document_url.replace('document_url=', ''))
+    filename = unquote(filename.replace('filename=', ''))
     parsed_url = urlparse(document_url)
 
     if parsed_url.netloc not in WHITELIST:
         abort(400)
     
-
     parsed_query = parse_qs(parsed_url.query)
 
     if parsed_query:
@@ -106,11 +108,10 @@ def document(city):
         if doc.status_code == 200:
             output = BytesIO(doc.content)
             
+            content_type = doc.headers['content-type']
+
             if doc.headers.get('content-disposition'):
                 filename = doc.headers['content-disposition'].rsplit('=', 1)[1].replace('"', '')
-                content_type = doc.headers['content-type']
-            else:
-                abort(404)
 
             s3_key.set_metadata('content-type', content_type)
             s3_key.set_metadata('filename', filename)
