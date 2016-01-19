@@ -8,12 +8,16 @@ from app_config import AWS_KEY, AWS_SECRET
 from io import StringIO, BytesIO
 from flask_cors import cross_origin
 
+from urllib.parse import urlparse, parse_qs, unquote
+
 app = Flask(__name__)
 
 LEGISTARS = {
-    'chicago': 'https://chicago.legistar.com/View.ashx',
+    'chicago': 'https://ord.legistar.com/View.ashx',
     'nyc': 'http://legistar.council.nyc.gov/View.ashx',
 }
+
+WHITELIST = ['ord.legistar.com', 'chicago.legistar.com']
 
 @app.route('/<pin>.jpg')
 def index(pin):
@@ -48,17 +52,41 @@ def index(pin):
 @app.route('/<city>/document/')
 @cross_origin()
 def document(city):
-    doc_id, guid = request.args.get('ID'), request.args.get('GUID')
+    try:
+        document_url = request.url.rsplit('?', 1)[1].replace('document_url=', '')
+    except IndexError:
+        abort(400)
 
-    if not id or not guid:
+    if not document_url:
         abort(404)
     
-    base_url = LEGISTARS.get(city)
+    document_url = unquote(document_url)
+    parsed_url = urlparse(document_url)
 
-    if not base_url:
-        abort(404)
-
+    if parsed_url.netloc not in WHITELIST:
+        abort(400)
     
+
+    parsed_query = parse_qs(parsed_url.query)
+
+    if parsed_query:
+        try:
+            doc_id = parsed_query['ID'][0]
+        except (KeyError, IndexError):
+            doc_id = ''
+
+        try:
+            guid = parsed_query['GUID'][0]
+        except (KeyError, IndexError):
+            guid = ''
+
+    else:
+        doc_id = ''
+        guid = parsed_url.path.rsplit('/')[-1]
+    
+    if not guid:
+        abort(400)
+
     s3_conn = S3Connection(AWS_KEY, AWS_SECRET)
     bucket = s3_conn.get_bucket('councilmatic-document-cache')
     s3_key = Key(bucket)
@@ -72,11 +100,8 @@ def document(city):
         filename = s3_key.metadata['filename']
 
     else:
-        url = '{base_url}?M=F&ID={doc_id}&GUID={guid}'.format(base_url=base_url,
-                                                              doc_id=doc_id,
-                                                              guid=guid)
         
-        doc = requests.get(url)
+        doc = requests.get(document_url)
         
         if doc.status_code == 200:
             output = BytesIO(doc.content)
