@@ -45,6 +45,7 @@ def index(pin):
             s3_key.set_contents_from_file(output)
             s3_key.set_acl('public-read')
         else:
+            sentry.captureMessage('Could not find image for PIN %s' % pin)
             abort(404)
     
     output.seek(0)
@@ -122,6 +123,7 @@ def document(city):
             s3_key.set_acl('public-read')
         
         else:
+            sentry.captureMessage('Could not find document at URL %s' % document_url)
             abort(doc.status_code)
     
     response = make_response(output.getvalue())
