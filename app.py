@@ -4,7 +4,7 @@ import requests
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 from boto.exception import S3ResponseError
-from app_config import AWS_KEY, AWS_SECRET
+from app_config import AWS_KEY, AWS_SECRET, SENTRY_DSN
 from io import StringIO, BytesIO
 from flask_cors import cross_origin
 
@@ -18,6 +18,9 @@ LEGISTARS = {
 }
 
 WHITELIST = ['ord.legistar.com', 'chicago.legistar.com']
+
+from raven.contrib.flask import Sentry
+sentry = Sentry(app, dsn=SENTRY_DSN)
 
 @app.route('/<pin>.jpg')
 def index(pin):
