@@ -39,7 +39,9 @@ def index(pin):
         image_url = image_viewer.format(pin)
         image = requests.get(image_url)
         
-        if image.headers['Content-Type'] == 'image/jpeg':
+        print(image.headers)
+
+        if  'image/jpeg' in image.headers['Content-Type']:
             output = BytesIO(image.content)
             s3_key.set_metadata('Content-Type', 'image/jpg')
             s3_key.set_contents_from_file(output)
