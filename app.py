@@ -15,9 +15,10 @@ app = Flask(__name__)
 LEGISTARS = {
     'chicago': 'https://ord.legistar.com/View.ashx',
     'nyc': 'http://legistar.council.nyc.gov/View.ashx',
+    'lametro': 'https://metro.legistr.com/View.ashx'
 }
 
-WHITELIST = ['ord.legistar.com', 'chicago.legistar.com']
+WHITELIST = ['ord.legistar.com', 'chicago.legistar.com', 'metro.legistar1.com']
 
 from raven.contrib.flask import Sentry
 sentry = Sentry(app, dsn=SENTRY_DSN)
@@ -38,7 +39,7 @@ def index(pin):
         image_viewer = 'http://www.cookcountyassessor.com/PropertyImage.aspx?pin={0}'
         image_url = image_viewer.format(pin)
         image = requests.get(image_url)
-        
+
         print(image.headers)
 
         if  'image/jpeg' in image.headers['Content-Type']:
@@ -49,7 +50,7 @@ def index(pin):
         else:
             sentry.captureMessage('Could not find image for PIN %s' % pin)
             abort(404)
-    
+
     output.seek(0)
     response = make_response(output.read())
     response.headers['Content-Type'] = 'image/jpg'
@@ -62,19 +63,19 @@ def document(city):
         query_params = request.url.rsplit('?', 1)[1]
     except IndexError:
         abort(400)
-    
+
     filename, document_url = query_params.split('&', 1)
 
     if not document_url:
         abort(404)
-    
+
     document_url = unquote(document_url.replace('document_url=', ''))
     filename = unquote(filename.replace('filename=', ''))
     parsed_url = urlparse(document_url)
 
     if parsed_url.netloc not in WHITELIST:
         abort(400)
-    
+
     parsed_query = parse_qs(parsed_url.query)
 
     if parsed_query:
@@ -91,14 +92,14 @@ def document(city):
     else:
         doc_id = ''
         guid = parsed_url.path.rsplit('/')[-1]
-    
+
     if not guid:
         abort(400)
 
     s3_conn = S3Connection(AWS_KEY, AWS_SECRET)
     bucket = s3_conn.get_bucket('councilmatic-document-cache')
     s3_key = Key(bucket)
-    s3_key.key = '{doc_id}_{guid}'.format(doc_id=doc_id, 
+    s3_key.key = '{doc_id}_{guid}'.format(doc_id=doc_id,
                                               guid=guid)
 
     if s3_key.exists():
@@ -108,12 +109,12 @@ def document(city):
         filename = s3_key.metadata['filename']
 
     else:
-        
+
         doc = requests.get(document_url)
-        
+
         if doc.status_code == 200:
             output = BytesIO(doc.content)
-            
+
             content_type = doc.headers['content-type']
 
             if doc.headers.get('content-disposition'):
@@ -123,14 +124,14 @@ def document(city):
             s3_key.set_metadata('filename', filename)
             s3_key.set_contents_from_file(output)
             s3_key.set_acl('public-read')
-        
+
         else:
             sentry.captureMessage('Could not find document at URL %s' % document_url)
             abort(doc.status_code)
-    
+
     response = make_response(output.getvalue())
     response.headers['Content-Type'] = content_type
-    
+
     if 'pdf' not in content_type:
         response.headers['Content-Disposition'] = 'attachment;filename="{}"'.format(filename)
 
