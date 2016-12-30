@@ -4,7 +4,7 @@ import requests
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 from boto.exception import S3ResponseError
-from app_config import AWS_KEY, AWS_SECRET, SENTRY_DSN
+from app_config import AWS_KEY, AWS_SECRET, SENTRY_DSN, IMAGE_SECRET
 from io import StringIO, BytesIO
 from flask_cors import cross_origin
 
@@ -40,13 +40,12 @@ def index(pin):
         image_url = image_viewer.format(pin)
         image = requests.get(image_url)
 
-        print(image.headers)
-
         if  'image/jpeg' in image.headers['Content-Type']:
             output = BytesIO(image.content)
             s3_key.set_metadata('Content-Type', 'image/jpg')
             s3_key.set_contents_from_file(output)
             s3_key.set_acl('public-read')
+        
         else:
             sentry.captureMessage('Could not find image for PIN %s' % pin)
             abort(404)
@@ -59,19 +58,7 @@ def index(pin):
 @app.route('/<city>/document/')
 @cross_origin()
 def document(city):
-    try:
-        query_params = request.url.rsplit('?', 1)[1]
-    except IndexError:
-        abort(400)
-
-    filename, document_url = query_params.split('&', 1)
-
-    if not document_url:
-        abort(404)
-
-    document_url = unquote(document_url.replace('document_url=', ''))
-    filename = unquote(filename.replace('filename=', ''))
-    parsed_url = urlparse(document_url)
+    parsed_url = getURL(request.url)
 
     if parsed_url.netloc not in WHITELIST:
         abort(400)
@@ -137,6 +124,71 @@ def document(city):
 
     return response
 
+@app.route('/image/')
+def image():
+    
+    if not request.args.get('key') == IMAGE_SECRET:
+        abort(401)
+    
+    try:
+        image_url = request.args['url']
+    except KeyError:
+        abort(400)
+    
+    parsed_url = urlparse(image_url)
+
+    if not parsed_url.netloc:
+        abort(400)
+    
+    remote_file = parsed_url.path.rsplit('/', 1)[-1]
+
+    s3_conn = S3Connection(AWS_KEY, AWS_SECRET)
+    bucket = s3_conn.get_bucket('myreps-image-cache')
+    s3_key = Key(bucket)
+    s3_key.key = '{0}/{1}'.format(parsed_url.netloc, remote_file)
+
+    if s3_key.exists():
+        output = BytesIO()
+        s3_key.get_contents_to_file(output)
+
+    else:
+
+        # For some reason, things hosted on illinois.gov do not have a valid
+        # SSL cert, at least according to my humble operating system. The
+        # problem is that it redirects to HTTPS and then the cert is not valid.
+        # *shrug*
+        
+        image = requests.get(image_url, verify=False)
+
+        if image.status_code == 200 and 'image' in image.headers['Content-Type']:
+            output = BytesIO(image.content)
+            s3_key.set_metadata('Content-Type', 'image/jpg')
+            s3_key.set_contents_from_file(output)
+            s3_key.set_acl('public-read')
+        
+        else:
+            sentry.captureMessage('Image does not exist at %s' % image_url)
+            abort(404)
+
+    output.seek(0)
+    response = make_response(output.read())
+    response.headers['Content-Type'] = 'image/jpg'
+    return response
+
+def getURL(url):
+    try:
+        query_params = url.rsplit('?', 1)[1]
+    except IndexError:
+        abort(400)
+
+    filename, document_url = query_params.split('&', 1)
+
+    if not document_url:
+        abort(404)
+
+    document_url = unquote(document_url.replace('document_url=', ''))
+    filename = unquote(filename.replace('filename=', ''))
+    return urlparse(document_url)
 
 if __name__ == "__main__":
     import os

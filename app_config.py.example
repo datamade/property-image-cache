@@ -1,3 +1,5 @@
 AWS_KEY = ''
 AWS_SECRET = ''
 SENTRY_DSN = ''
+
+IMAGE_SECRET = ''
