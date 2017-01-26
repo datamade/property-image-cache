@@ -18,7 +18,7 @@ LEGISTARS = {
     'lametro': 'https://metro.legistr.com/View.ashx'
 }
 
-WHITELIST = ['ord.legistar.com', 'chicago.legistar.com', 'metro.legistar1.com']
+WHITELIST = ['ord.legistar.com', 'chicago.legistar.com', 'metro.legistar1.com', 'metro.legistar.com']
 
 from raven.contrib.flask import Sentry
 sentry = Sentry(app, dsn=SENTRY_DSN)
