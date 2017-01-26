@@ -45,7 +45,7 @@ def index(pin):
             s3_key.set_metadata('Content-Type', 'image/jpg')
             s3_key.set_contents_from_file(output)
             s3_key.set_acl('public-read')
-        
+
         else:
             sentry.captureMessage('Could not find image for PIN %s' % pin)
             abort(404)
@@ -58,7 +58,22 @@ def index(pin):
 @app.route('/<city>/document/')
 @cross_origin()
 def document(city):
-    parsed_url = getURL(request.url)
+
+
+    try:
+        parsed_url = getURL(request.url)
+        query_params = request.url.rsplit('?', 1)[1]
+    except IndexError:
+        abort(400)
+
+    filename, document_url = query_params.split('&', 1)
+
+    if not document_url:
+         abort(404)
+
+    document_url = unquote(document_url.replace('document_url=', ''))
+    filename = unquote(filename.replace('filename=', ''))
+    parsed_url = urlparse(document_url)
 
     if parsed_url.netloc not in WHITELIST:
         abort(400)
@@ -126,20 +141,20 @@ def document(city):
 
 @app.route('/image/')
 def image():
-    
+
     if not request.args.get('key') == IMAGE_SECRET:
         abort(401)
-    
+
     try:
         image_url = request.args['url']
     except KeyError:
         abort(400)
-    
+
     parsed_url = urlparse(image_url)
 
     if not parsed_url.netloc:
         abort(400)
-    
+
     remote_file = parsed_url.path.rsplit('/', 1)[-1]
 
     s3_conn = S3Connection(AWS_KEY, AWS_SECRET)
@@ -157,7 +172,7 @@ def image():
         # SSL cert, at least according to my humble operating system. The
         # problem is that it redirects to HTTPS and then the cert is not valid.
         # *shrug*
-        
+
         image = requests.get(image_url, verify=False)
 
         if image.status_code == 200 and 'image' in image.headers['Content-Type']:
@@ -165,7 +180,7 @@ def image():
             s3_key.set_metadata('Content-Type', 'image/jpg')
             s3_key.set_contents_from_file(output)
             s3_key.set_acl('public-read')
-        
+
         else:
             sentry.captureMessage('Image does not exist at %s' % image_url)
             abort(404)
