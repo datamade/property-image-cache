@@ -16,7 +16,7 @@ Find the `full_text_doc_url` method, which generates an encoded url that directs
 
 ```
 # base_url = 'https://pic.datamade.us/lametro/document/'
-base_url = 'http://127.0.0.1:5000/lametro/document/'http://127.0.0.1:5000/lametro/document/
+base_url = 'http://127.0.0.1:5000/lametro/document/'
 ```
 
 ### Run it!
