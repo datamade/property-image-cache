@@ -6,3 +6,9 @@ app_config.py
 /configs/app_config.py
 /configs/pic.conf.nginx
 /configs/pic.conf.supervisor
+/configs/pic-staging.conf.nginx
+/scripts/after_install.sh
+/scripts/app_start.sh
+/scripts/app_stop.sh
+/scripts/before_install.sh
+/scripts/validate_service.sh
