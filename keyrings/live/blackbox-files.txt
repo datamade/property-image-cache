@@ -1,2 +1,3 @@
 configs/app_config.py
 configs/pic.conf.nginx
+configs/pic.conf.supervisor
