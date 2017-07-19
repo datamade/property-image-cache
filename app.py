@@ -59,40 +59,24 @@ def index(pin):
 @cross_origin()
 def document(city):
 
-    query_string = urlparse(request.url).query
+    query = parse_qs(urlparse(request.url).query)
 
     if not query:
         abort(400)
 
-    query = parse_qs(query_string)
-
-    if not query['document_url']:
-         abort(400)
-
     document_url, = query['document_url']
     filename, = query['filename']
 
-    parsed_url = urlparse(document_url)
+    document_url_parsed = urlparse(document_url)
 
-    if parsed_url.netloc not in WHITELIST:
+    if document_url_parsed.netloc not in WHITELIST:
         abort(400)
 
-    parsed_query = parse_qs(parsed_url.query)
+    document_query = parse_qs(document_url_parsed.query)
 
-    if parsed_query:
-        try:
-            doc_id, = parsed_query['ID'][0]
-        except (KeyError, IndexError):
-            doc_id = ''
-
-        try:
-            guid = parsed_query['GUID'][0]
-        except (KeyError, IndexError):
-            guid = ''
-
-    else:
-        doc_id = ''
-        guid = parsed_url.path.rsplit('/')[-1]
+    doc_id, = document_query.get('ID', (None,))
+    guid, = document_query.get('GUID',
+                               (document_url_parsed.path.rsplit('/')[-1],))
 
     if not guid:
         abort(400)
@@ -113,6 +97,7 @@ def document(city):
     else:
 
         doc = requests.get(document_url)
+        source_url = doc.url
 
         if doc.status_code == 200:
             output = BytesIO(doc.content)
@@ -124,7 +109,7 @@ def document(city):
 
             s3_key.set_metadata('content-type', content_type)
             s3_key.set_metadata('filename', filename)
-            s3.key.set_metadata('source_url', doc.url)
+            s3_key.set_metadata('source_url', source_url)
             s3_key.set_contents_from_file(output)
             s3_key.set_acl('public-read')
 
