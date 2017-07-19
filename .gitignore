@@ -3,3 +3,6 @@ app_config.py
 /keyrings/live/pubring.gpg~
 /keyrings/live/pubring.kbx~
 /keyrings/live/secring.gpg
+/configs/app_config.py
+/configs/pic.conf.nginx
+/configs/pic.conf.supervisor

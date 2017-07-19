@@ -3,3 +3,4 @@ requests==2.7.0
 boto==2.38.0
 flask_cors==2.1.2
 raven[flask]
+gunicorn
