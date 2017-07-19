@@ -12,7 +12,7 @@ deploy:
   access_key_id: AKIAJNYGDLOJKHOUWCAA
   secret_access_key:
     secure: TkVt7vzMf7aJwjSfxjGI/ds0ndj/MlIWezwtNdPQqBZeIQ/Aw1HCstJ1xUobT/eZTdKpXsbmJA9g+IgZk5GE+l+SchZ5G2Of3ndYFGKXIsRAGL0gRm+Asp4mkHMKslu+oga7BTzhYPulOcjz+dlGxyei9TR55qlM8JuGgXbEXRYHCqCBWLTwYNrKLEXHK92xh8dUOGC12SjAI5R+toGkCPZ+mRjC1fE+Ro8E1EG817oDcMzpJlD4cQofsrv2rdDJW6ald1WpuX7upQwiOusi8VLI1SgRhnHFnigJhdj88dqc0lmLjrghca5CDK3Kx/5WQpEwJdyvozBq/VuzzzFVlODMVwN84ohnm47M3BHFSIBHggKVL+9ABf1pjoPIVz6KdS3zA9qsaYjB5Q+hHb1JG9qGaPHQ7+7cWB/7HW9XLsnoCbsgjlKBsvGrbyi3vxAHD9KSH59aFpmcM8TyGWTcHpc0LUDG0kEgr4st+urx1zUgr07Xmbw5Nu+Fh3uUow1Pb2y1SqNFALC2QHF8YobaQ2KcfT2fFtyWcffjZpZFq4AV4C37anFYS/Yi0p1hmK82AQSSXzlJqildlgRJl602yRSPhhXpFY3EHy0CZQUPLiIf2jFt6of/F3rZVtDUbmea8+yHb7gdDNK3LkF5tE5WXG4OjgbK61Jn9qjw0pdn3wY=
-  application: property-image-cache
+  application: pic
   deployment_group: staging
   on:
     repo: datamade/property-image-cache
