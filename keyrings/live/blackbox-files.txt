@@ -3,3 +3,4 @@ configs/pic.conf.nginx
 configs/pic.conf.supervisor
 configs/pic-staging.conf.nginx
 scripts/after_install.sh
+scripts/app_start.sh
