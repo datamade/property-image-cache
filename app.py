@@ -59,20 +59,19 @@ def index(pin):
 @cross_origin()
 def document(city):
 
+    query_string = urlparse(request.url).query
 
-    try:
-        parsed_url = getURL(request.url)
-        query_params = request.url.rsplit('?', 1)[1]
-    except IndexError:
+    if not query:
         abort(400)
 
-    filename, document_url = query_params.split('&', 1)
+    query = parse_qs(query_string)
 
-    if not document_url:
-         abort(404)
+    if not query['document_url']:
+         abort(400)
 
-    document_url = unquote(document_url.replace('document_url=', ''))
-    filename = unquote(filename.replace('filename=', ''))
+    document_url, = query['document_url']
+    filename, = query['filename']
+
     parsed_url = urlparse(document_url)
 
     if parsed_url.netloc not in WHITELIST:
@@ -82,7 +81,7 @@ def document(city):
 
     if parsed_query:
         try:
-            doc_id = parsed_query['ID'][0]
+            doc_id, = parsed_query['ID'][0]
         except (KeyError, IndexError):
             doc_id = ''
 
@@ -102,13 +101,14 @@ def document(city):
     bucket = s3_conn.get_bucket('councilmatic-document-cache')
     s3_key = Key(bucket)
     s3_key.key = '{doc_id}_{guid}'.format(doc_id=doc_id,
-                                              guid=guid)
+                                          guid=guid)
 
     if s3_key.exists():
         output = BytesIO()
         s3_key.get_contents_to_file(output)
         content_type = s3_key.content_type
         filename = s3_key.metadata['filename']
+        source_url = s3_key.metadata.get('source_url', None)
 
     else:
 
@@ -124,6 +124,7 @@ def document(city):
 
             s3_key.set_metadata('content-type', content_type)
             s3_key.set_metadata('filename', filename)
+            s3.key.set_metadata('source_url', doc.url)
             s3_key.set_contents_from_file(output)
             s3_key.set_acl('public-read')
 
@@ -133,7 +134,7 @@ def document(city):
 
     response = make_response(output.getvalue())
     response.headers['Content-Type'] = content_type
-    response.headers['Filename'] = filename
+    response.headers['Source URL'] = source_url
 
     if 'pdf' not in content_type:
         response.headers['Content-Disposition'] = 'attachment;filename="{}"'.format(filename)
@@ -191,20 +192,6 @@ def image():
     response.headers['Content-Type'] = 'image/jpg'
     return response
 
-def getURL(url):
-    try:
-        query_params = url.rsplit('?', 1)[1]
-    except IndexError:
-        abort(400)
-
-    filename, document_url = query_params.split('&', 1)
-
-    if not document_url:
-        abort(404)
-
-    document_url = unquote(document_url.replace('document_url=', ''))
-    filename = unquote(filename.replace('filename=', ''))
-    return urlparse(document_url)
 
 if __name__ == "__main__":
     import os
