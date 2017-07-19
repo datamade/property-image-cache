@@ -119,7 +119,7 @@ def document(city):
 
     response = make_response(output.getvalue())
     response.headers['Content-Type'] = content_type
-    response.headers['Source URL'] = source_url
+    response.headers['Source-URL'] = source_url
 
     if 'pdf' not in content_type:
         response.headers['Content-Disposition'] = 'attachment;filename="{}"'.format(filename)
