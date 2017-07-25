@@ -8,7 +8,7 @@ from app_config import AWS_KEY, AWS_SECRET, SENTRY_DSN, IMAGE_SECRET
 from io import StringIO, BytesIO
 from flask_cors import cross_origin
 
-from urllib.parse import urlparse, parse_qs, unquote
+import urllib.parse 
 
 app = Flask(__name__)
 
@@ -59,7 +59,7 @@ def index(pin):
 @cross_origin()
 def document(city):
 
-    query = parse_qs(urlparse(request.url).query)
+    query = urllib.parse.parse_qs(urllib.parse.urlparse(request.url).query)
 
     if not query:
         abort(400)
@@ -67,25 +67,17 @@ def document(city):
     document_url, = query['document_url']
     filename, = query['filename']
 
-    document_url_parsed = urlparse(document_url)
+    document_url_parsed = urllib.parse.urlparse(document_url)
 
     if document_url_parsed.netloc not in WHITELIST:
         abort(400)
 
-    document_query = parse_qs(document_url_parsed.query)
-
-    doc_id, = document_query.get('ID', (None,))
-    guid, = document_query.get('GUID',
-                               (document_url_parsed.path.rsplit('/')[-1],))
-
-    if not guid:
-        abort(400)
+    document_query = urllib.parse.parse_qs(document_url_parsed.query)
 
     s3_conn = S3Connection(AWS_KEY, AWS_SECRET)
     bucket = s3_conn.get_bucket('councilmatic-document-cache')
     s3_key = Key(bucket)
-    s3_key.key = '{doc_id}_{guid}'.format(doc_id=doc_id,
-                                          guid=guid)
+    s3_key.key = urllib.parse.quote_plus(document_url)
 
     if s3_key.exists():
         output = BytesIO()
