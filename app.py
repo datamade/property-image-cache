@@ -15,7 +15,7 @@ app = Flask(__name__)
 LEGISTARS = {
     'chicago': 'https://ord.legistar.com/View.ashx',
     'nyc': 'http://legistar.council.nyc.gov/View.ashx',
-    'lametro': 'https://metro.legistr.com/View.ashx'
+    'lametro': 'https://metro.legistar.com/View.ashx'
 }
 
 WHITELIST = ['ord.legistar.com', 'chicago.legistar.com', 'metro.legistar1.com', 'metro.legistar.com']
@@ -88,7 +88,7 @@ def document(city):
 
     else:
 
-        doc = requests.get(document_url)
+        doc = requests.get(document_url, verify=False)
         source_url = doc.url
 
         if doc.status_code == 200:
