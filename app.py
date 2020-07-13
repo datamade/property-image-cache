@@ -1,14 +1,21 @@
-from flask import Flask, request, make_response, abort
+from io import StringIO, BytesIO
 import json
-import requests
+import urllib.parse
+
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 from boto.exception import S3ResponseError
-from app_config import AWS_KEY, AWS_SECRET, SENTRY_DSN, IMAGE_SECRET
-from io import StringIO, BytesIO
+from flask import Flask, request, make_response, abort
 from flask_cors import cross_origin
+import requests
 
-import urllib.parse 
+import sentry_sdk
+from sentry_sdk import capture_message
+from sentry_sdk.integrations.flask import FlaskIntegration
+
+from app_config import AWS_KEY, AWS_SECRET, SENTRY_DSN, IMAGE_SECRET
+from sentry_handlers import before_send
+
 
 app = Flask(__name__)
 
@@ -20,8 +27,15 @@ LEGISTARS = {
 
 WHITELIST = ['ord.legistar.com', 'chicago.legistar.com', 'metro.legistar1.com', 'metro.legistar.com']
 
-from raven.contrib.flask import Sentry
-sentry = Sentry(app, dsn=SENTRY_DSN)
+sentry_sdk.init(
+    dsn=SENTRY_DSN,
+    integrations=[FlaskIntegration()],
+    before_send=before_send
+)
+
+MISSING_PIN_ERROR = 'Could not find image for PIN'
+MISSING_DOCUMENT_ERROR = 'Could not find document at URL'
+MISSING_IMAGE_ERROR = 'Image does not exist at'
 
 @app.route('/<pin>.jpg')
 def index(pin):
@@ -47,7 +61,7 @@ def index(pin):
             s3_key.set_acl('public-read')
 
         else:
-            sentry.captureMessage('Could not find image for PIN %s' % pin)
+            capture_message('{0} {1}'.format(MISSING_PIN_ERROR, pin))
             abort(404)
 
     output.seek(0)
@@ -106,7 +120,7 @@ def document(city):
             s3_key.set_acl('public-read')
 
         else:
-            sentry.captureMessage('Could not find document at URL %s' % document_url)
+            capture_message('{0} {1}'.format(MISSING_DOCUMENT_ERROR, document_url))
             abort(doc.status_code)
 
     response = make_response(output.getvalue())
@@ -161,13 +175,28 @@ def image():
             s3_key.set_acl('public-read')
 
         else:
-            sentry.captureMessage('Image does not exist at %s' % image_url)
+            capture_message('{0} {1}'.format(MISSING_IMAGE_ERROR, image_url))
             abort(404)
 
     output.seek(0)
     response = make_response(output.read())
     response.headers['Content-Type'] = 'image/jpg'
     return response
+
+@app.route('/test-logging/')
+def test_logging():
+    from uuid import uuid4
+
+    base_messages = (
+        MISSING_PIN_ERROR,
+        MISSING_DOCUMENT_ERROR,
+        MISSING_IMAGE_ERROR,
+    )
+
+    for message in base_messages:
+        capture_message('{0} {1}'.format(message, uuid4()))
+
+    raise Exception('Exception raised')
 
 
 if __name__ == "__main__":
