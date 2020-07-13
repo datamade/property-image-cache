@@ -14,6 +14,7 @@ from sentry_sdk import capture_message
 from sentry_sdk.integrations.flask import FlaskIntegration
 
 from app_config import AWS_KEY, AWS_SECRET, SENTRY_DSN, IMAGE_SECRET
+from sentry_handlers import before_send
 
 
 app = Flask(__name__)
@@ -28,7 +29,8 @@ WHITELIST = ['ord.legistar.com', 'chicago.legistar.com', 'metro.legistar1.com', 
 
 sentry_sdk.init(
     dsn=SENTRY_DSN,
-    integrations=[FlaskIntegration()]
+    integrations=[FlaskIntegration()],
+    before_send=before_send
 )
 
 @app.route('/<pin>.jpg')
@@ -179,7 +181,17 @@ def image():
 
 @app.route('/test-logging/')
 def test_logging():
-    capture_message('Message captured')
+    from uuid import uuid4
+
+    base_messages = (
+        'Could not find image for PIN',
+        'Could not find document at URL',
+        'Image does not exist at',
+    )
+
+    for message in base_messages:
+        capture_message('{0} {1}'.format(message, uuid4()))
+
     raise Exception('Exception raised')
 
 
