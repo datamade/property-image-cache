@@ -33,6 +33,10 @@ sentry_sdk.init(
     before_send=before_send
 )
 
+MISSING_PIN_ERROR = 'Could not find image for PIN'
+MISSING_DOCUMENT_ERROR = 'Could not find document at URL'
+MISSING_IMAGE_ERROR = 'Image does not exist at'
+
 @app.route('/<pin>.jpg')
 def index(pin):
 
@@ -57,7 +61,7 @@ def index(pin):
             s3_key.set_acl('public-read')
 
         else:
-            capture_message('Could not find image for PIN %s' % pin)
+            capture_message('{0} {1}'.format(MISSING_PIN_ERROR, pin))
             abort(404)
 
     output.seek(0)
@@ -116,7 +120,7 @@ def document(city):
             s3_key.set_acl('public-read')
 
         else:
-            capture_message('Could not find document at URL %s' % document_url)
+            capture_message('{0} {1}'.format(MISSING_DOCUMENT_ERROR, document_url))
             abort(doc.status_code)
 
     response = make_response(output.getvalue())
@@ -171,7 +175,7 @@ def image():
             s3_key.set_acl('public-read')
 
         else:
-            capture_message('Image does not exist at %s' % image_url)
+            capture_message('{0} {1}'.format(MISSING_IMAGE_ERROR, image_url))
             abort(404)
 
     output.seek(0)
@@ -184,9 +188,9 @@ def test_logging():
     from uuid import uuid4
 
     base_messages = (
-        'Could not find image for PIN',
-        'Could not find document at URL',
-        'Image does not exist at',
+        MISSING_PIN_ERROR,
+        MISSING_DOCUMENT_ERROR,
+        MISSING_IMAGE_ERROR,
     )
 
     for message in base_messages:
