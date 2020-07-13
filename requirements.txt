@@ -1,6 +1,6 @@
-Flask==0.10.1
+Flask==0.11
 requests==2.7.0
 boto==2.38.0
 flask_cors==2.1.2
-raven[flask]
+sentry-sdk[flask]==0.16.1
 gunicorn
