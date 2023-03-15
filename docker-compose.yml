@@ -1,0 +1,14 @@
+version: '2.4'
+
+services:
+  app:
+    image: property-image-cache
+    build: .
+    container_name: property-image-cache
+    stdin_open: true
+    tty: true
+    ports:
+      - 5001:5000
+    volumes:
+      - .:/app
+    command: python app.py

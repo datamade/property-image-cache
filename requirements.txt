@@ -1,6 +1,8 @@
-Flask==0.11
+Flask==1.0
 requests==2.7.0
 boto==2.38.0
 flask_cors==2.1.2
 sentry-sdk[flask]==0.16.1
 gunicorn
+Jinja2<=3.0.0
+itsdangerous<=2.0.1
