@@ -6,3 +6,4 @@ sentry-sdk[flask]==0.16.1
 gunicorn
 Jinja2<=3.0.0
 itsdangerous<=2.0.1
+Werkzeug<3.0
